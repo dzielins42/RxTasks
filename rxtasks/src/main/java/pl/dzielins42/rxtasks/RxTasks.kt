@@ -2,6 +2,7 @@ package pl.dzielins42.rxtasks
 
 import com.google.android.gms.tasks.Task
 import io.reactivex.Completable
+import io.reactivex.CompletableEmitter
 import io.reactivex.Single
 import io.reactivex.SingleEmitter
 import java.util.concurrent.CancellationException
@@ -12,9 +13,9 @@ import java.util.concurrent.CancellationException
 fun <T : Any> Task<T>.asSingle(): Single<T> {
     return Single.create<T> { emitter ->
         if (isComplete || isCanceled) {
-            handleSingleEmitter(emitter)
+            handleEmitter(emitter)
         } else {
-            addOnCompleteListener { task -> task.handleSingleEmitter(emitter) }
+            addOnCompleteListener { task -> task.handleEmitter(emitter) }
             addOnCanceledListener { emitter.onError(CancellationException("Task cancelled")) }
         }
     }
@@ -25,15 +26,21 @@ fun <T : Any> Task<T>.asSingle(): Single<T> {
  * completes when [Task] completes or calls `onError`.
  */
 fun Task<Void>.aCompletable(): Completable {
-    return this.asSingle().ignoreElement()
+    return Completable.create { emitter ->
+        if (isComplete || isCanceled) {
+            handleEmitter(emitter)
+        } else {
+            addOnCompleteListener { task -> task.handleEmitter(emitter) }
+            addOnCanceledListener { emitter.onError(CancellationException("Task cancelled")) }
+        }
+    }
 }
 
-private fun <T : Any> Task<T>.handleSingleEmitter(emitter: SingleEmitter<T>) {
+private fun <T : Any> Task<T>.handleEmitter(emitter: SingleEmitter<T>) {
     if (!isCanceled) {
         if (exception != null) {
             emitter.onError(exception!!)
         } else {
-            // Believe or not but getResult may throw an Exception
             try {
                 if (result != null) {
                     emitter.onSuccess(result!!)
@@ -43,6 +50,18 @@ private fun <T : Any> Task<T>.handleSingleEmitter(emitter: SingleEmitter<T>) {
             } catch (e: Exception) {
                 emitter.onError(e)
             }
+        }
+    } else {
+        emitter.onError(CancellationException("Task cancelled"))
+    }
+}
+
+private fun <T : Any> Task<T>.handleEmitter(emitter: CompletableEmitter) {
+    if (!isCanceled) {
+        if (exception != null) {
+            emitter.onError(exception!!)
+        } else {
+            emitter.onComplete()
         }
     } else {
         emitter.onError(CancellationException("Task cancelled"))

@@ -65,6 +65,33 @@ class RxTasksInstrumentedTest {
     }
 
     @Test
+    fun whenTasksHasCompletedWithoutValueSingleCallsOnError() {
+        // Arrange
+        val task: Task<Void> = Tasks.forResult(null)
+
+        // Act
+        val testObserver = task.asSingle().test().await()
+
+        // Assert
+        testObserver
+            .assertError { error -> error is IllegalStateException }
+    }
+
+    @Test
+    fun whenTasksHasCompletedWithoutValueCompletableCompletes() {
+        // Arrange
+        val task: Task<Void> = Tasks.forResult(null)
+
+        // Act
+        val testObserver = task.aCompletable().test().await()
+
+        // Assert
+        testObserver
+            .assertComplete()
+            .assertNoErrors()
+    }
+
+    @Test
     fun whenTasksHasCompletedWithErrorSingleCallsOnError() {
         // Arrange
         val expectedError = Exception()
@@ -85,6 +112,33 @@ class RxTasksInstrumentedTest {
 
         // Act
         val testObserver = task.asSingle().test().await()
+
+        // Assert
+        testObserver
+            .assertError { error -> error is CancellationException }
+    }
+
+    @Test
+    fun whenTasksHasCompletedWithErrorCompletableCallsOnError() {
+        // Arrange
+        val expectedError = Exception()
+        val task: Task<Void> = Tasks.forException(expectedError)
+
+        // Act
+        val testObserver = task.aCompletable().test().await()
+
+        // Assert
+        testObserver
+            .assertError(expectedError)
+    }
+
+    @Test
+    fun whenTasksWasCancelledCompletableCallsOnErrorWithCancellationException() {
+        // Arrange
+        val task: Task<Void> = Tasks.forCanceled()
+
+        // Act
+        val testObserver = task.aCompletable().test().await()
 
         // Assert
         testObserver
