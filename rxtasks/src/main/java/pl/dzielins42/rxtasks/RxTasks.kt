@@ -25,7 +25,7 @@ fun <T : Any> Task<T>.asSingle(): Single<T> {
  * Wraps [Task], which does not return a value, in [Completable], which
  * completes when [Task] completes or calls `onError`.
  */
-fun Task<Void>.aCompletable(): Completable {
+fun Task<Void>.asCompletable(): Completable {
     return Completable.create { emitter ->
         if (isComplete || isCanceled) {
             handleEmitter(emitter)

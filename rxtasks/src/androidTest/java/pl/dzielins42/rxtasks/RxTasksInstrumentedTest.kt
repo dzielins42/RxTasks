@@ -83,7 +83,7 @@ class RxTasksInstrumentedTest {
         val task: Task<Void> = Tasks.forResult(null)
 
         // Act
-        val testObserver = task.aCompletable().test().await()
+        val testObserver = task.asCompletable().test().await()
 
         // Assert
         testObserver
@@ -125,7 +125,7 @@ class RxTasksInstrumentedTest {
         val task: Task<Void> = Tasks.forException(expectedError)
 
         // Act
-        val testObserver = task.aCompletable().test().await()
+        val testObserver = task.asCompletable().test().await()
 
         // Assert
         testObserver
@@ -138,7 +138,7 @@ class RxTasksInstrumentedTest {
         val task: Task<Void> = Tasks.forCanceled()
 
         // Act
-        val testObserver = task.aCompletable().test().await()
+        val testObserver = task.asCompletable().test().await()
 
         // Assert
         testObserver
